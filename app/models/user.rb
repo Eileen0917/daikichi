@@ -37,6 +37,11 @@ class User < ApplicationRecord
       .where.not(role: %w[pending resigned])
   }
 
+  scope :remote_valid, -> {
+    where('join_date <= :now', now: Date.current)
+      .where.not(role: %w[pending resigned parttime intern contractor])
+  }
+
   scope :fulltime, -> {
     where('role in (?)', %w[manager employee hr])
       .valid

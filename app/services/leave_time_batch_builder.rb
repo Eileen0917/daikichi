@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require 'biz/core_ext'
+
 class LeaveTimeBatchBuilder
   MONTHLY_LEED_DAYS         = Settings.leed_days.monthly
   JOIN_DATE_BASED_LEED_DAYS = Settings.leed_days.join_date_based
@@ -8,6 +10,7 @@ class LeaveTimeBatchBuilder
   end
 
   def automatically_import
+    return unless Date.current.business_day?
     batch_join_date_based_import
     batch_monthly_import
   end
@@ -34,7 +37,7 @@ class LeaveTimeBatchBuilder
 
   def batch_monthly_import
     return if !end_of_working_month? && !@forced
-    User.valid.find_each do |user|
+    User.remote_valid.find_each do |user|
       if @forced
         LeaveTimeBuilder.new(user).monthly_import
       else
@@ -44,7 +47,7 @@ class LeaveTimeBatchBuilder
   end
 
   def end_of_working_month?
-    @end_of_working_month_bool ||= Daikichi::Config::Biz.time(MONTHLY_LEED_DAYS, :days).after(Time.current.beginning_of_day).to_date == Daikichi::Config::Biz.periods.before(Time.current.end_of_month).first.end_time.to_date
+    Daikichi::Config::Biz.time(MONTHLY_LEED_DAYS, :days).after(Time.current.beginning_of_day).to_date == Daikichi::Config::Biz.periods.before(Time.current.end_of_month).first.end_time.to_date
   end
 
   def reaching_join_date
